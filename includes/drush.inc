@@ -636,7 +636,7 @@ function drush_print_r($array, $handle = NULL) {
  * @see t()
  */
 function dt($string, $args = array()) {
-  if (function_exists('t')) {
+  if (function_exists('t') && (drush_drupal_version() >= 7 && drupal_bootstrap() >= DRUPAL_BOOTSTRAP_LANGUAGE)) {
     return t($string, $args);
   }
   else {
