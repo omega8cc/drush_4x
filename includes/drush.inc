@@ -636,7 +636,10 @@ function drush_print_r($array, $handle = NULL) {
  * @see t()
  */
 function dt($string, $args = array()) {
-  if (function_exists('t') && (drush_drupal_version() >= 7 && drupal_bootstrap() >= DRUPAL_BOOTSTRAP_LANGUAGE)) {
+  if (function_exists('t') && (drush_drupal_version() >= 7 || function_exists('theme'))) {
+    if (function_exists('drupal_classloader')) {
+      drupal_classloader();
+    }
     return t($string, $args);
   }
   else {
