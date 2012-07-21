@@ -156,7 +156,9 @@ function update_main_prepare() {
     require_once DRUPAL_ROOT . '/core/includes/bootstrap.inc';
     require_once DRUPAL_ROOT . '/core/includes/common.inc';
     require_once DRUPAL_ROOT . '/core/includes/file.inc';
-    require_once DRUPAL_ROOT . '/core/includes/entity.inc';
+    if (file_exists(DRUPAL_ROOT . '/core/includes/entity.inc')) {
+      require_once DRUPAL_ROOT . '/core/includes/entity.inc';
+    }
     include_once DRUPAL_ROOT . '/core/includes/unicode.inc';
   }
   else {
