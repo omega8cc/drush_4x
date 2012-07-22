@@ -1065,14 +1065,14 @@ function drush_pm_uninstall() {
       drush_log(dt('!module is already uninstalled.', array('!module' => $module)), 'ok');
     }
     else {
-      $required_by = array();
-      foreach (array_keys($module_info[$module]->required_by) as $dependent) {
+      $dependents = array();
+      foreach (drush_module_dependents(array($module), $module_info) as $dependent) {
         if (!in_array($dependent, $required) && ($module_info[$dependent]->schema_version != -1)) {
-          $required_by[] = $dependent;
+          $dependents[] = $dependent;
         }
       }
-      if (count($required_by)) {
-        drush_log(dt('To uninstall !module, the following modules must be uninstalled first: !required', array('!module' => $module, '!required' => implode(', ', $required_by))), 'error');
+      if (count($dependents)) {
+        drush_log(dt('To uninstall !module, the following modules must be uninstalled first: !required', array('!module' => $module, '!required' => implode(', ', $dependents))), 'error');
         unset($modules[$key]);
       }
     }
@@ -2094,7 +2094,7 @@ function drush_pm_download_validate() {
       drush_log(dt('Unknown variant !variant. Valid values: !variations', array('!variant' => $variant, '!variations' => implode(', ', $variations))), 'error');
     }
   }
-  // full and projects variants are only valid for wget package handler.
+  // 'full' and 'projects' variants are only valid for wget package handler.
   $package_handler = drush_get_option('package-handler', 'wget');
   if (($package_handler != 'wget') && ($variant != 'profile-only')) {
     $new_variant = 'profile-only';
@@ -2134,11 +2134,8 @@ function _drush_pm_get_release_history_xml($request) {
   // bootstrapped.
   $url = drush_get_option('source', 'http://updates.drupal.org/release-history') . '/' . $request['name'] . '/' . $request['drupal_version'];
   drush_log('Downloading release history from ' . $url);
-  // Some hosts have allow_url_fopen disabled.
-  if (!$xml = @simplexml_load_file($url)) {
-    $filename = _drush_download_file($url);
-    $xml = simplexml_load_file($filename);
-    drush_op('unlink', $filename);
+  if ($path = drush_download_file($url, drush_tempnam($request['name']), drush_get_option('cache-duration-releasexml', 24*3600))) {
+    $xml = simplexml_load_file($path);
   }
   if (!$xml) {
     // We are not getting here since drupal.org always serves an XML response.
@@ -2203,6 +2200,14 @@ function drush_pm_download() {
     // We face here all the asymetries to make it smooth for package handlers.
     // For Drupal core: --drupal-project-rename or drupal-x.y
     if ($request['project_type'] == 'core') {
+      // Avoid downloading core into existing core.
+      if (drush_get_context('DRUSH_BOOTSTRAP_PHASE') >= DRUSH_BOOTSTRAP_DRUPAL_ROOT) {
+        if (strpos(realpath(drush_get_option('destination')), DRUPAL_ROOT) !== FALSE) {
+          drush_log(dt('It\'s forbidden to download !project core into an existing core.', array('!project' => $request['name'])), 'error');
+          continue;
+        }
+      }
+
       if ($rename = drush_get_option('drupal-project-rename', FALSE)) {
         if ($rename === TRUE) {
           $request['project_dir'] = 'drupal';

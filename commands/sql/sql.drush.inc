@@ -60,7 +60,7 @@ function sql_drush_command() {
     'bootstrap' => DRUSH_BOOTSTRAP_DRUSH,
     'examples' => array(
       'drush sql-dump --result-file=../18.sql' => 'Save SQL dump to the directory above Drupal root.',
-      'drush sql-dump --skip-tables-key=common' => 'Skip standard tables. @see example.drushrc.com',
+      'drush sql-dump --skip-tables-key=common' => 'Skip standard tables. @see example.drushrc.php',
     ),
     'options' => array(
       'result-file' => 'Save to a file. The file should be relative to Drupal root. If --result-file is provided with no value, then date based filename will be created under ~/drush-backups directory.',
@@ -342,7 +342,7 @@ function drush_sql_build_dump_command($table_selection, $db_spec = NULL) {
 
         // Run mysqldump again and append output if we need some structure only tables.
         if (!empty($structure_tables)) {
-          $exec .= "&& mysqldump --no-data $extra " . implode(' ', $structure_tables);
+          $exec .= " && mysqldump --no-data $extra " . implode(' ', $structure_tables);
           if ($file) {
             $exec .= " >> $file";
           }
@@ -379,7 +379,7 @@ function drush_sql_build_dump_command($table_selection, $db_spec = NULL) {
           foreach ($structure_tables as $table) {
             $schemaonlies[] = "--table=$table";
           }
-          $exec .= "; pg_dump --schema-only " . implode(' ', $schemaonlies) . $extra;
+          $exec .= " && pg_dump --schema-only " . implode(' ', $schemaonlies) . $extra;
           if ($file) {
             $exec .= " >> $file";
           }
@@ -830,7 +830,7 @@ function _drush_sql_get_credentials($db_spec = NULL) {
   $parameter_strings = array();
   foreach ($parameters as $key => $value) {
     // Only escape the values, not the keys or the rest of the string.
-    $value = escapeshellcmd($value);
+    $value = drush_escapeshellarg($value);
     $parameter_strings[] = "--$key=$value";
   }
 
@@ -984,7 +984,7 @@ function drush_sql_su($db_spec) {
  *
  * @param boolean $quoted
  *   Quote the database name. Mysql uses backticks to quote which can cause problems
- *   in a Windows shell. Set TRUE of the CREATE is not running on the bash command line.
+ *   in a Windows shell. Set TRUE if the CREATE is not running on the bash command line.
  */
 function drush_sql_build_createdb_sql($db_spec, $quoted = FALSE) {
   switch (_drush_sql_get_scheme($db_spec)) {

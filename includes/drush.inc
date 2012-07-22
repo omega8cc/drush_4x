@@ -1574,9 +1574,9 @@ function drush_tarball_extract($path, $destination = FALSE, $listing = FALSE) {
   // If we are not on Windows, then try to do "tar" in a single operation.
   if ((!drush_is_windows()) && (drush_shell_cd_and_exec(dirname($path), "tar -C %s -xzf %s", $destination, basename($path)))) {
     if ($listing) {
-      // We use a separate tar -tf instead of -xvf above because
+      // We use a separate tar -tzf instead of -xvf above because
       // the output is not the same in Mac.
-      drush_shell_cd_and_exec(dirname($path), "tar -tf %s", basename($path));
+      drush_shell_cd_and_exec(dirname($path), "tar -tzf %s", basename($path));
       return drush_shell_exec_output();
     }
     return TRUE;
@@ -1662,7 +1662,7 @@ function drush_copy_dir($src, $dest, $overwrite = FALSE) {
   // Preflight based on $overwrite if $dest exists.
   if (file_exists($dest)) {
     if ($overwrite) {
-      drush_op('drush_delete_dir', $dest);
+      drush_op('drush_delete_dir', $dest, TRUE);
     }
     else {
       return drush_set_error('DRUSH_DESTINATION_EXISTS', dt('Destination directory !dest already exists.', array('!dest' => $dest)));
@@ -1734,7 +1734,7 @@ function drush_move_dir($src, $dest, $overwrite = FALSE) {
   // Preflight based on $overwrite if $dest exists.
   if (file_exists($dest)) {
     if ($overwrite) {
-      drush_op('drush_delete_dir', $dest);
+      drush_op('drush_delete_dir', $dest, TRUE);
     }
     else {
       return drush_set_error('DRUSH_DESTINATION_EXISTS', dt('Destination directory !dest already exists.', array('!dest' => $dest)));
@@ -1761,7 +1761,7 @@ function drush_move_dir($src, $dest, $overwrite = FALSE) {
   // If 'rename' fails, then we will use copy followed
   // by a delete of the source.
   if (drush_copy_dir($src, $dest)) {
-    drush_op('drush_delete_dir', $src);
+    drush_op('drush_delete_dir', $src, TRUE);
     return TRUE;
   }
 
@@ -1918,7 +1918,7 @@ function _drush_delete_registered_files() {
     // though they did not need to.
     if (file_exists($file)) {
       if (is_dir($file)) {
-        drush_delete_dir($file);
+        drush_delete_dir($file, TRUE);
       }
       else {
         unlink($file);
@@ -2093,6 +2093,8 @@ function drush_db_select($table, $fields = '*', $where = NULL, $args = NULL, $st
       $query .= " ORDER BY $order_by_field $order_by_direction";
     }
     if (!is_null($length)) {
+      $db_spec = _drush_sql_get_db_spec();
+      $db_scheme = _drush_sql_get_scheme($db_spec);
       $limit = " LIMIT $length";
       if (!is_null($start)) {
         $limit .= " OFFSET $start";
