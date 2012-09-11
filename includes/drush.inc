@@ -636,20 +636,33 @@ function drush_print_r($array, $handle = NULL) {
  * @see t()
  */
 function dt($string, $args = array()) {
-  if (function_exists('t') && (drush_drupal_version() >= 7 || function_exists('theme'))) {
+  $output = NULL;
+  if (function_exists('t') && drush_drupal_major_version() == 7) {
+    $output = t($string, $args);
+  }
+  // The language system triggers a container build which requires config dirs to be defined.
+  else if (drush_drupal_major_version() >= 8 && !empty($GLOBALS['config_directories'])) {
     if (function_exists('drupal_classloader')) {
       drupal_classloader();
     }
-    return t($string, $args);
+    if (function_exists('t')) {
+      $output = t($string, $args);
+    }
   }
-  else {
+  else if (function_exists('t') && drush_drupal_major_version() <= 7 && function_exists('theme')) {
+    $output = t($string, $args);
+  }
+
+  // If Drupal's t() function unavailable.
+  if (is_null($output)) {
     if (!empty($args)) {
-      return strtr($string, $args);
+      $output = strtr($string, $args);
     }
     else {
-      return $string;
+      $output = $string;
     }
   }
+  return $output;
 }
 
 /**
