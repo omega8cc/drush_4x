@@ -152,6 +152,7 @@ function update_main_prepare() {
 
   // We prepare a minimal bootstrap for the update requirements check to avoid
   // reaching the PHP memory limit.
+  $eight_or_newer = FALSE;
   if (file_exists(DRUPAL_ROOT . '/core/includes')) {
     require_once DRUPAL_ROOT . '/core/includes/bootstrap.inc';
     require_once DRUPAL_ROOT . '/core/includes/common.inc';
@@ -160,6 +161,7 @@ function update_main_prepare() {
       require_once DRUPAL_ROOT . '/core/includes/entity.inc';
     }
     include_once DRUPAL_ROOT . '/core/includes/unicode.inc';
+    $eight_or_newer = TRUE;
   }
   else {
     require_once DRUPAL_ROOT . '/includes/bootstrap.inc';
@@ -169,7 +171,9 @@ function update_main_prepare() {
     include_once DRUPAL_ROOT . '/includes/unicode.inc';
   }
 
-  update_prepare_d7_bootstrap();
+  if (!$eight_or_newer) {
+    update_prepare_d7_bootstrap();
+  }
   drupal_bootstrap(DRUPAL_BOOTSTRAP_SESSION);
 
   if (file_exists(DRUPAL_ROOT . '/core/includes')) {
@@ -236,7 +240,7 @@ function update_main_prepare() {
    // Change query-strings on css/js files to enforce reload for all users.
   _drupal_flush_css_js();
   // Flush the cache of all data for the update status module.
-  if (db_table_exists('cache_update')) {
+  if (db_table_exists('cache_update') && !$eight_or_newer) {
     cache_clear_all('*', 'cache_update', TRUE);
   }
 
