@@ -222,6 +222,11 @@ function drush_cache_clear_css_js() {
  * Clear the cache of the block output.
  */
 function drush_cache_clear_block() {
-  cache_clear_all(NULL, 'cache_block');
+  if (drush_drupal_major_version() <= 7) {
+    cache_clear_all(NULL, 'cache_block');
+  }
+  else {
+    cache('block')->flush();
+  }
 }
 

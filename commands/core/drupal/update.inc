@@ -152,7 +152,6 @@ function update_main_prepare() {
 
   // We prepare a minimal bootstrap for the update requirements check to avoid
   // reaching the PHP memory limit.
-  $eight_or_newer = FALSE;
   if (file_exists(DRUPAL_ROOT . '/core/includes')) {
     require_once DRUPAL_ROOT . '/core/includes/bootstrap.inc';
     require_once DRUPAL_ROOT . '/core/includes/common.inc';
@@ -161,7 +160,6 @@ function update_main_prepare() {
       require_once DRUPAL_ROOT . '/core/includes/entity.inc';
     }
     include_once DRUPAL_ROOT . '/core/includes/unicode.inc';
-    $eight_or_newer = TRUE;
   }
   else {
     require_once DRUPAL_ROOT . '/includes/bootstrap.inc';
@@ -171,7 +169,7 @@ function update_main_prepare() {
     include_once DRUPAL_ROOT . '/includes/unicode.inc';
   }
 
-  if (!$eight_or_newer) {
+  if (drush_drupal_major_version() <= 7) {
     update_prepare_d7_bootstrap();
   }
   drupal_bootstrap(DRUPAL_BOOTSTRAP_SESSION);
@@ -197,8 +195,16 @@ function update_main_prepare() {
   else {
     include_once DRUPAL_ROOT . '/includes/module.inc';
   }
-  $module_list['system']['filename'] = 'modules/system/system.module';
-  module_list(TRUE, FALSE, FALSE, $module_list);
+
+  if (drush_drupal_major_version() <= 7) {
+    $module_list['system']['filename'] = 'modules/system/system.module';
+    module_list(TRUE, FALSE, FALSE, $module_list);
+  }
+  else {
+    $module_list['system']['filename'] = 'core/modules/system/system.module';
+    module_list(NULL, $module_list);
+  }
+
   drupal_load('module', 'system');
 
   // Reset the module_implements() cache so that any new hook implementations
@@ -218,7 +224,9 @@ function update_main_prepare() {
   // So bootstrap to DRUPAL_BOOTSTRAP_LANGUAGE then include unicode.inc.
   drupal_bootstrap(DRUPAL_BOOTSTRAP_LANGUAGE);
 
-  update_fix_d7_requirements();
+  if (drush_drupal_major_version() <= 7) {
+    update_fix_d7_requirements();
+  }
 
   // Now proceed with a full bootstrap.
 
@@ -240,8 +248,13 @@ function update_main_prepare() {
    // Change query-strings on css/js files to enforce reload for all users.
   _drupal_flush_css_js();
   // Flush the cache of all data for the update status module.
-  if (db_table_exists('cache_update') && !$eight_or_newer) {
-    cache_clear_all('*', 'cache_update', TRUE);
+  if (db_table_exists('cache_update')) {
+    if (drush_drupal_major_version() <= 7) {
+      cache_clear_all('*', 'cache_update', TRUE);
+    }
+    else {
+      cache('update')->flush();
+    }
   }
 
   module_list(TRUE, FALSE, TRUE);
@@ -257,7 +270,7 @@ function update_main() {
 
   $start = array();
 
-  // Ensure system module's updates run first 
+  // Ensure system module's updates run first
   $start['system'] = array();
 
 
