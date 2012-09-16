@@ -63,7 +63,12 @@ function drush_backend_batch_process($command = 'batch-process') {
  * requirements have been taken care of.
  */
 function drush_batch_command($id) {
-  include_once('includes/batch.inc');
+  if (drush_drupal_major_version() >= 8) {
+    include_once('core/includes/batch.inc');
+  }
+  else {
+    include_once('includes/batch.inc');
+  }
   drush_include_engine('drupal', 'batch', drush_drupal_major_version());
   _drush_batch_command($id);
 }

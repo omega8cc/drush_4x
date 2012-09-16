@@ -257,7 +257,13 @@ function update_main_prepare() {
     }
   }
 
-  module_list(TRUE, FALSE, TRUE);
+  if (drush_drupal_major_version() <= 7) {
+    module_list(TRUE, FALSE, TRUE);
+  }
+  else {
+    module_list(NULL, $module_list);
+  }
+
 }
 
 
